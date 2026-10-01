@@ -2,234 +2,256 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Soporte Nivel 1 - Diagnóstico Integral</title>
+    <title>Consola Nivel 1 - {{ filename }}</title>
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>mermaid.initialize({ startOnLoad: true });</script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f4f6f9; color: #333; }
-        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 1250px; margin: auto; }
-        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .search-box { background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 25px; display: flex; gap: 10px; align-items: center; }
-        .search-box input { padding: 8px; width: 300px; border: 1px solid #ced4da; border-radius: 4px; }
-        .search-box button { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: #f4f6f9; color: #333; }
+        .topbar { background: #1e293b; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .topbar a { color: #94a3b8; text-decoration: none; font-size: 14px; }
+        .topbar a:hover { color: white; }
         
-        /* SEMÁFORO EJECUTIVO */
-        .verdict-banner { padding: 18px 20px; border-radius: 6px; margin-bottom: 20px; border-left: 6px solid; }
-        .verdict-success { background: #d4edda; border-color: #28a745; color: #155724; }
-        .verdict-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
-        .verdict-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
-
-        /* ACCIONES RECOMENDADAS */
-        .rec-box { background: #e2f0d9; border: 1px solid #c3e6cb; padding: 15px 20px; border-radius: 6px; margin-bottom: 25px; }
-        .rec-box h4 { margin: 0 0 8px 0; color: #155724; }
-        .rec-box ul { margin: 0; padding-left: 20px; font-size: 13px; color: #155724; line-height: 1.5; }
-
-        /* FICHAS DE DISPOSITIVOS */
-        .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .device-card { background: #fff; border: 1px solid #cbd3da; border-top: 4px solid #007bff; padding: 12px 15px; border-radius: 4px; font-size: 13px; }
-
-        /* PESTAÑAS */
-        .tabs { display: flex; gap: 10px; border-bottom: 2px solid #dee2e6; margin-bottom: 25px; }
-        .tab-btn { background: #e9ecef; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; cursor: pointer; border-top-left-radius: 6px; border-top-right-radius: 6px; color: #495057; }
-        .tab-btn.active { background: #007bff; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #fff; border: 1px solid #dee2e6; border-left: 4px solid #007bff; padding: 15px; border-radius: 4px; }
-        .stat-card.danger { border-left-color: #dc3545; }
-        .stat-card.success { border-left-color: #28a745; }
+        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
         
-        .flow-container { background: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 6px; margin-bottom: 25px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
-        th, td { border: 1px solid #dee2e6; padding: 9px 12px; text-align: left; font-size: 13px; }
-        th { background-color: #343a40; color: white; }
-        .row-danger { background-color: #f8d7da !important; color: #721c24; }
-        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
-        .badge-danger { background: #dc3545; color: white; }
-        .badge-success { background: #28a745; color: white; }
-        a { text-decoration: none; color: #007bff; }
+        .verdict-banner { padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .verdict-success { border-color: #10b981; color: #065f46; }
+        .verdict-danger { border-color: #ef4444; color: #991b1b; }
+
+        .alert-accordion { background: white; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); overflow: hidden; }
+        .accordion-header { background: #fffbeb; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #fef3c7; }
+        .accordion-body { padding: 15px 20px; display: none; background: #fafaf9; }
+        .accordion-body.open { display: block; }
+
+        .issue-card { background: white; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .issue-card button { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; }
+        .issue-card button:hover { background: #2563eb; }
+
+        .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .device-card { background: white; border: 1px solid #e2e8f0; border-top: 3px solid #3b82f6; padding: 12px 15px; border-radius: 6px; font-size: 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+
+        .nav-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+        .tab-trigger { background: transparent; border: none; padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer; color: #64748b; border-radius: 6px; }
+        .tab-trigger.active { background: #eff6ff; color: #3b82f6; }
+        
+        .tab-panel { display: none; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tab-panel.active { display: block; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        th { background: #f8fafc; color: #475569; font-weight: 600; }
+        
+        .highlight-row { animation: flash 2s ease; }
+        @keyframes flash {
+            0% { background-color: #fef08a; transform: scale(1.01); }
+            50% { background-color: #fde047; }
+            100% { background-color: transparent; }
+        }
+
+        .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-box { background: white; padding: 25px; width: 650px; border-radius: 8px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-close { float: right; font-size: 20px; font-weight: bold; cursor: pointer; color: #94a3b8; }
+        .modal-close:hover { color: #333; }
+        pre { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; white-space: pre-wrap; font-family: monospace; }
     </style>
     <script>
-        function openTab(evt, tabName) {
-            var contents = document.getElementsByClassName("tab-content");
-            for (var i = 0; i < contents.length; i++) { contents[i].classList.remove("active"); }
-            var buttons = document.getElementsByClassName("tab-btn");
-            for (var i = 0; i < buttons.length; i++) { buttons[i].classList.remove("active"); }
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
+        function switchTab(evt, tabId) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function toggleAccordion() {
+            var body = document.getElementById('accordionBody');
+            body.classList.toggle('open');
+        }
+
+        function jumpToPacket(pktIndex, isTcp) {
+            if (isTcp) {
+                document.querySelectorAll('.tab-trigger')[1].click();
+            } else {
+                document.querySelectorAll('.tab-trigger')[0].click();
+            }
+
+            setTimeout(function() {
+                var rowId = isTcp ? 'tcp-row-' + pktIndex : 'sip-row-' + pktIndex;
+                var row = document.getElementById(rowId);
+                
+                if (row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.classList.add('highlight-row');
+                    setTimeout(() => row.classList.remove('highlight-row'), 2500);
+                } else {
+                    alert("El paquete #" + pktIndex + " existe en la captura pero no está pintado en esta tabla resumida.");
+                }
+            }, 60);
+        }
+
+        // USO DE JSON SEGURO PARA EVITAR ERRORES DE SINTAXIS CON SALTOS DE LÍNEA Y COMILLAS
+        function showPayload(payload, index, type) {
+            document.getElementById('modal-title').innerText = "Inspección del Paquete " + type + " #" + index;
+            document.getElementById('modal-text').innerText = payload || "Este paquete no contiene carga útil de texto.";
+            document.getElementById('payloadModal').style.display = 'flex';
+        }
+
+        function hideModal() {
+            document.getElementById('payloadModal').style.display = 'none';
         }
     </script>
 </head>
 <body>
-    <div class="container">
-        <div class="header-nav">
-            <a href="/">&larr; Cargar otro PCAP</a>
-            <h2 style="margin: 0;">🛠️ Consola de Soporte Nivel 1: {{ filename }}</h2>
-            <span></span>
-        </div>
 
-        <!-- 1. VEREDICTO EJECUTIVO / CAUSA RAÍZ -->
+    <div class="topbar">
+        <div><strong>🛠️ Asistente de Red y Oficina</strong> — {{ filename }}</div>
+        <div><a href="/">&larr; Cargar otro PCAP</a></div>
+    </div>
+
+    <div class="main-container">
+
+        <!-- 1. SEMÁFORO DE CAUSA RAÍZ -->
         <div class="verdict-banner verdict-{{ results.verdict.level }}">
-            <h3 style="margin: 0 0 5px 0;">{{ results.verdict.title }}</h3>
+            <h3 style="margin: 0 0 5px 0; font-size: 16px;">{{ results.verdict.title }}</h3>
             <p style="margin: 0; font-size: 14px;">{{ results.verdict.desc }}</p>
         </div>
 
-        <!-- 2. PLAN DE ACCIÓN RECOMENDADO -->
-        {% if results.recommendations %}
-        <div class="rec-box">
-            <h4>💡 Acciones recomendadas para la resolución del ticket:</h4>
-            <ul>
-                {% for rec in results.recommendations %}
-                    <li>{{ rec }}</li>
+        <!-- 2. BANDEJA DE ALERTAS PLEGABLE -->
+        {% if results.errors %}
+        <div class="alert-accordion">
+            <div class="accordion-header" onclick="toggleAccordion()">
+                <div>
+                    <span style="background: #ef4444; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">{{ results.errors | length }} Alertas</span>
+                    <strong style="margin-left: 10px; font-size: 14px; color: #991b1b;">Se han detectado anomalías operativas. Haz clic para desplegar los detalles.</strong>
+                </div>
+                <span style="font-size: 14px; color: #d97706; font-weight: bold;">▼ Desplegar / Ocultar</span>
+            </div>
+            <div id="accordionBody" class="accordion-body">
+                {% for err in results.errors %}
+                <div class="issue-card">
+                    <div>
+                        <span style="background: #334155; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">{{ err.type }}</span>
+                        <strong style="margin-left: 8px; font-size: 13px;">{{ err.summary }}</strong>
+                        {% if err.count > 1 %}
+                            <span style="background: #f59e0b; color: white; padding: 1px 6px; border-radius: 10px; font-size: 11px; font-weight: bold; margin-left: 6px;">{{ err.count }} eventos</span>
+                        {% endif %}
+                        <div style="color: #64748b; font-size: 12px; margin-top: 3px;">{{ err.desc }}</div>
+                    </div>
+                    <button onclick="jumpToPacket({{ err.first_pkt }}, {{ 'true' if err.type == 'Seguridad / Firewall' else 'false' }})">Ir al paquete #{{ err.first_pkt }} &rarr;</button>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
         </div>
         {% endif %}
 
-        <!-- 3. FICHA DE DISPOSITIVOS DETECTADOS -->
-        <h4 style="margin-bottom: 10px; color: #495057;">📱 Inventario de Terminales / Endpoints Involucrados:</h4>
+        <!-- 3. INVENTARIO DE DISPOSITIVOS -->
+        <h4 style="color: #475569; margin-bottom: 10px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">📱 Dispositivos Identificados en la Traza:</h4>
         <div class="device-grid">
             {% if results.devices %}
                 {% for dev in results.devices %}
                 <div class="device-card">
-                    <div><strong>Extensión / Usuario:</strong> <span style="color: #007bff;">{{ dev.extension }}</span></div>
-                    <div><strong>Dirección IP:</strong> <code>{{ dev.ip }}</code></div>
-                    <div><strong>Rol:</strong> {{ dev.status }}</div>
+                    <div><strong>Extensión:</strong> <span style="color: #3b82f6;">{{ dev.extension }}</span></div>
+                    <div><strong>IP:</strong> <code>{{ dev.ip }}</code></div>
+                    <div><strong>Rol:</strong> {{ dev.role }}</div>
                 </div>
                 {% endfor %}
             {% else %}
-                <div style="font-size: 13px; color: #6c757d;">No se han detectado dispositivos SIP explícitos en esta captura.</div>
+                <div style="font-size: 13px; color: #64748b; background: white; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0;">No se han detectado terminales IP explícitos en esta captura.</div>
             {% endif %}
         </div>
 
-        <!-- MÉTRICAS CLAVE -->
-        <div class="stats-grid" style="margin-top: 20px;">
-            <div class="stat-card">
-                <div style="font-size: 11px; color: #6c757d;">PAQUETES TOTALES</div>
-                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.total_packets }}</div>
-            </div>
-            <div class="stat-card success">
-                <div style="font-size: 11px; color: #6c757d;">TRAMAS SIP</div>
-                <div style="font-size: 20px; font-weight: bold;">{{ results.sip | length }}</div>
-            </div>
-            <div class="stat-card danger">
-                <div style="font-size: 11px; color: #6c757d;">CORTES DE RED (TCP RST)</div>
-                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.tcp_resets }}</div>
-            </div>
-            <div class="stat-card danger">
-                <div style="font-size: 11px; color: #6c757d;">ERRORES CRÍTICOS SIP</div>
-                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.critical_errors }}</div>
-            </div>
+        <!-- 4. PESTAÑAS ESPECIALIZADAS -->
+        <div class="nav-tabs" style="margin-top: 25px;">
+            <button class="tab-trigger active" onclick="switchTab(event, 'panel-sip')">📞 Llamadas y Señalización (SIP)</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'panel-net')">🌐 Capa de Red y Firewall (TCP)</button>
         </div>
 
-        <!-- FILTRO POR IP -->
-        <form action="/upload" method="POST" class="search-box">
-            <label for="filter_ip"><strong>Filtrar por IP o Extensión:</strong></label>
-            <input type="text" id="filter_ip" name="filter_ip" value="{{ filter_ip }}" placeholder="Ej: 10.141.16.12">
-            <button type="submit">Aplicar Filtro</button>
-            {% if filter_ip %}
-                <a href="/reset" style="margin-left: 15px; color: #dc3545; font-weight: bold;">Limpiar filtro</a>
-            {% endif %}
-        </form>
-
-        <!-- BARRA DE PESTAÑAS -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="openTab(event, 'tab-voip')">📞 Módulo VoIP / SIP</button>
-            <button class="tab-btn" onclick="openTab(event, 'tab-rtp')">🎧 Módulo de Audio (RTP)</button>
-            <button class="tab-btn" onclick="openTab(event, 'tab-net')">🌐 Módulo de Red (TCP)</button>
-        </div>
-
-        <!-- PESTAÑA 1: VOIP -->
-        <div id="tab-voip" class="tab-content active">
-            <h3>📊 Diagramas de Secuencia por Sesión</h3>
+        <!-- PESTAÑA SIP -->
+        <div id="panel-sip" class="tab-panel active">
+            <h3 style="margin-top: 0; font-size: 16px; color: #1e293b;">Diagramas de Secuencia (Call Flows)</h3>
             {% if results.flows %}
                 {% for call_id, messages in results.flows.items() %}
-                <div class="flow-container">
-                    <h4 style="margin-top: 0; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
-                        Call-ID: <span style="font-family: monospace; font-size: 12px; color: #007bff;">{{ call_id }}</span>
-                    </h4>
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; margin-bottom: 20px; overflow-x: auto;">
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 10px; font-family: monospace;">Call-ID: {{ call_id }}</div>
                     <div class="mermaid">
                         sequenceDiagram
                         autonumber
                         {% for m in messages %}
                             {% set src_id = "ip_" ~ m.src_ip | replace('.', '_') %}
                             {% set dst_id = "ip_" ~ m.dst_ip | replace('.', '_') %}
-                            {% set src_label = m.from_num ~ " (" ~ m.src_ip ~ ")" %}
-                            {% set dst_label = m.to_num ~ " (" ~ m.dst_ip ~ ")" %}
-
-                            participant {{ src_id }} as {{ src_label }}
-                            participant {{ dst_id }} as {{ dst_label }}
-
-                            {% if m.is_critical %}
-                                {{ src_id }}->>{{ dst_id }}: ❌ {{ m.info }}
-                            {% else %}
-                                {{ src_id }}->>{{ dst_id }}: {{ m.info }}
-                            {% endif %}
+                            participant {{ src_id }} as {{ m.from_num }} ({{ m.src_ip }})
+                            participant {{ dst_id }} as {{ m.to_num }} ({{ m.dst_ip }})
+                            {{ src_id }}->>{{ dst_id }}: {{ m.info }}
                         {% endfor %}
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-                <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">No hay flujos SIP registrados.</p>
+                <p style="color: #64748b; font-size: 13px;">No hay flujos SIP registrados.</p>
             {% endif %}
+
+            <h3 style="font-size: 16px; color: #1e293b; margin-top: 30px;">Registro de Paquetes SIP</h3>
+            <table>
+                <tr>
+                    <th>Nº Pkt</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Mensaje</th>
+                    <th>Inspección</th>
+                </tr>
+                {% for s in results.sip %}
+                <tr id="sip-row-{{ s.pkt_index }}">
+                    <td><strong>#{{ s.pkt_index }}</strong></td>
+                    <td><code>{{ s.src_ip }}</code></td>
+                    <td><code>{{ s.dst_ip }}</code></td>
+                    <td><code>{{ s.info }}</code></td>
+                    <!-- USO DE | tojson PARA EVITAR ROMPER JAVASCRIPT CON SALTOS DE LÍNEA -->
+                    <td><button onclick="showPayload({{ s.full_payload | tojson }}, {{ s.pkt_index }}, 'SIP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver detalles</button></td>
+                </tr>
+                {% endfor %}
+            </table>
         </div>
 
-        <!-- PESTAÑA 2: RED -->
-        <div id="tab-net" class="tab-content">
-            <h3>🌐 Auditoría de Conexiones TCP / Infraestructura</h3>
+        <!-- PESTAÑA RED -->
+        <div id="panel-net" class="tab-panel">
+            <h3 style="margin-top: 0; font-size: 16px; color: #1e293b;">Auditoría de Capa de Red (TCP)</h3>
             {% if results.tcp %}
             <table>
                 <tr>
-                    <th>Origen IP</th>
-                    <th>Destino IP</th>
+                    <th>Nº Pkt</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
                     <th>Puertos</th>
-                    <th>Estado TCP</th>
-                    <th>Análisis de Soporte</th>
+                    <th>Estado</th>
+                    <th>Diagnóstico</th>
+                    <th>Inspección</th>
                 </tr>
                 {% for t in results.tcp %}
-                <tr class="{% if t.level == 'danger' %}row-danger{% endif %}">
+                <tr id="tcp-row-{{ t.pkt_index }}">
+                    <td><strong>#{{ t.pkt_index }}</strong></td>
                     <td><code>{{ t.src }}</code></td>
                     <td><code>{{ t.dst }}</code></td>
                     <td>{{ t.port }}</td>
                     <td><strong>{{ t.status_desc }}</strong></td>
                     <td>{{ t.explanation }}</td>
+                    <!-- USO DE | tojson PARA ESCAPE SEGURO -->
+                    <td><button onclick="showPayload({{ t.full_payload | tojson }}, {{ t.pkt_index }}, 'TCP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver detalles</button></td>
                 </tr>
                 {% endfor %}
             </table>
             {% else %}
-            <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">No hay tráfico TCP analizable.</p>
-            {% endif %}
-        </div>
-
-		<!-- PESTAÑA 3: RTP / AUDIO -->
-        <div id="tab-rtp" class="tab-content">
-            <h3>🎧 Auditoría de Flujos de Audio (RTP - UDP Multimedia)</h3>
-            {% if results.rtp %}
-            <p style="font-size: 13px; color: #6c757d;">Se han detectado flujos de audio asociados a llamadas. Si los usuarios se quejan de cortes o mala calidad, revise el volumen de paquetes transmitidos.</p>
-            <table>
-                <tr>
-                    <th>Flujo de Audio (Origen ➔ Destino)</th>
-                    <th>Paquetes RTP Capturados</th>
-                    <th>Volumen Total (Bytes)</th>
-                    <th>Estado de Calidad Estimada</th>
-                </tr>
-                {% for r in results.rtp %}
-                <tr>
-                    <td><code>{{ r.stream }}</code></td>
-                    <td>{{ r.packets }} paquetes</td>
-                    <td>{{ r.bytes }} bytes</td>
-                    <td><span class="badge badge-success">AUDIO DETECTADO (ESTABLE)</span></td>
-                </tr>
-                {% endfor %}
-            </table>
-            {% else %}
-            <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">
-                No se han detectado flujos multimedia RTP en esta captura (probablemente porque es una traza exclusivamente de señalización o registros).
-            </p>
+            <p style="color: #64748b; font-size: 13px;">No hay tráfico TCP disponible.</p>
             {% endif %}
         </div>
 
     </div>
+
+    <!-- MODAL DE INSPECCIÓN -->
+    <div id="payloadModal" class="modal-bg">
+        <div class="modal-box">
+            <span class="modal-close" onclick="hideModal()">&times;</span>
+            <h3 id="modal-title" style="margin-top: 0; font-size: 16px;">Detalle del Paquete</h3>
+            <pre id="modal-text">Cargando...</pre>
+        </div>
+    </div>
+
 </body>
 </html>
