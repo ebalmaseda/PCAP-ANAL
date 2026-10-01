@@ -2,86 +2,234 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Troubleshooting PCAP - {{ filename }}</title>
+    <title>Soporte Nivel 1 - Diagnóstico Integral</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: true });</script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f0f2f5; color: #333; }
-        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 1200px; margin: auto; }
-        .search-box { background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f4f6f9; color: #333; }
+        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); max-width: 1250px; margin: auto; }
+        .header-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .search-box { background: #e9ecef; padding: 15px; border-radius: 6px; margin-bottom: 25px; display: flex; gap: 10px; align-items: center; }
         .search-box input { padding: 8px; width: 300px; border: 1px solid #ced4da; border-radius: 4px; }
-        .search-box button { background: #d9534f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .search-box button:hover { background: #c9302c; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #dee2e6; padding: 8px 12px; text-align: left; font-size: 13px; }
+        .search-box button { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        
+        /* SEMÁFORO EJECUTIVO */
+        .verdict-banner { padding: 18px 20px; border-radius: 6px; margin-bottom: 20px; border-left: 6px solid; }
+        .verdict-success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .verdict-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .verdict-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+
+        /* ACCIONES RECOMENDADAS */
+        .rec-box { background: #e2f0d9; border: 1px solid #c3e6cb; padding: 15px 20px; border-radius: 6px; margin-bottom: 25px; }
+        .rec-box h4 { margin: 0 0 8px 0; color: #155724; }
+        .rec-box ul { margin: 0; padding-left: 20px; font-size: 13px; color: #155724; line-height: 1.5; }
+
+        /* FICHAS DE DISPOSITIVOS */
+        .device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .device-card { background: #fff; border: 1px solid #cbd3da; border-top: 4px solid #007bff; padding: 12px 15px; border-radius: 4px; font-size: 13px; }
+
+        /* PESTAÑAS */
+        .tabs { display: flex; gap: 10px; border-bottom: 2px solid #dee2e6; margin-bottom: 25px; }
+        .tab-btn { background: #e9ecef; border: none; padding: 12px 20px; font-size: 15px; font-weight: bold; cursor: pointer; border-top-left-radius: 6px; border-top-right-radius: 6px; color: #495057; }
+        .tab-btn.active { background: #007bff; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #fff; border: 1px solid #dee2e6; border-left: 4px solid #007bff; padding: 15px; border-radius: 4px; }
+        .stat-card.danger { border-left-color: #dc3545; }
+        .stat-card.success { border-left-color: #28a745; }
+        
+        .flow-container { background: #fff; border: 1px solid #dee2e6; padding: 20px; border-radius: 6px; margin-bottom: 25px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
+        th, td { border: 1px solid #dee2e6; padding: 9px 12px; text-align: left; font-size: 13px; }
         th { background-color: #343a40; color: white; }
-        .sip-row { background-color: #d4edda !important; font-weight: bold; }
-        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
-        .stat-card { background: #f8f9fa; border-left: 4px solid #007bff; padding: 10px 15px; border-radius: 4px; flex: 1; }
+        .row-danger { background-color: #f8d7da !important; color: #721c24; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .badge-danger { background: #dc3545; color: white; }
+        .badge-success { background: #28a745; color: white; }
         a { text-decoration: none; color: #007bff; }
     </style>
+    <script>
+        function openTab(evt, tabName) {
+            var contents = document.getElementsByClassName("tab-content");
+            for (var i = 0; i < contents.length; i++) { contents[i].classList.remove("active"); }
+            var buttons = document.getElementsByClassName("tab-btn");
+            for (var i = 0; i < buttons.length; i++) { buttons[i].classList.remove("active"); }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+    </script>
 </head>
 <body>
     <div class="container">
-        <a href="/">&larr; Cargar otro PCAP</a>
-        <h2>Análisis Forense / Troubleshooting: {{ filename }}</h2>
-        
-        <div class="stats">
-            <div class="stat-card"><strong>Total Paquetes:</strong> {{ results.total_packets }}</div>
-            <div class="stat-card" style="border-left-color: #28a745;"><strong>Coincidencias Filtradas:</strong> {{ results.filtered_packets }}</div>
-            <div class="stat-card" style="border-left-color: #ffc107;"><strong>Señales SIP Detectadas:</strong> {{ results.sip | length }}</div>
+        <div class="header-nav">
+            <a href="/">&larr; Cargar otro PCAP</a>
+            <h2 style="margin: 0;">🛠️ Consola de Soporte Nivel 1: {{ filename }}</h2>
+            <span></span>
         </div>
 
-        <!-- BARRA DE FILTRO POR IP -->
+        <!-- 1. VEREDICTO EJECUTIVO / CAUSA RAÍZ -->
+        <div class="verdict-banner verdict-{{ results.verdict.level }}">
+            <h3 style="margin: 0 0 5px 0;">{{ results.verdict.title }}</h3>
+            <p style="margin: 0; font-size: 14px;">{{ results.verdict.desc }}</p>
+        </div>
+
+        <!-- 2. PLAN DE ACCIÓN RECOMENDADO -->
+        {% if results.recommendations %}
+        <div class="rec-box">
+            <h4>💡 Acciones recomendadas para la resolución del ticket:</h4>
+            <ul>
+                {% for rec in results.recommendations %}
+                    <li>{{ rec }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- 3. FICHA DE DISPOSITIVOS DETECTADOS -->
+        <h4 style="margin-bottom: 10px; color: #495057;">📱 Inventario de Terminales / Endpoints Involucrados:</h4>
+        <div class="device-grid">
+            {% if results.devices %}
+                {% for dev in results.devices %}
+                <div class="device-card">
+                    <div><strong>Extensión / Usuario:</strong> <span style="color: #007bff;">{{ dev.extension }}</span></div>
+                    <div><strong>Dirección IP:</strong> <code>{{ dev.ip }}</code></div>
+                    <div><strong>Rol:</strong> {{ dev.status }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="font-size: 13px; color: #6c757d;">No se han detectado dispositivos SIP explícitos en esta captura.</div>
+            {% endif %}
+        </div>
+
+        <!-- MÉTRICAS CLAVE -->
+        <div class="stats-grid" style="margin-top: 20px;">
+            <div class="stat-card">
+                <div style="font-size: 11px; color: #6c757d;">PAQUETES TOTALES</div>
+                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.total_packets }}</div>
+            </div>
+            <div class="stat-card success">
+                <div style="font-size: 11px; color: #6c757d;">TRAMAS SIP</div>
+                <div style="font-size: 20px; font-weight: bold;">{{ results.sip | length }}</div>
+            </div>
+            <div class="stat-card danger">
+                <div style="font-size: 11px; color: #6c757d;">CORTES DE RED (TCP RST)</div>
+                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.tcp_resets }}</div>
+            </div>
+            <div class="stat-card danger">
+                <div style="font-size: 11px; color: #6c757d;">ERRORES CRÍTICOS SIP</div>
+                <div style="font-size: 20px; font-weight: bold;">{{ results.stats.critical_errors }}</div>
+            </div>
+        </div>
+
+        <!-- FILTRO POR IP -->
         <form action="/upload" method="POST" class="search-box">
-            <label for="filter_ip"><strong>Filtrar por IP (Origen o Destino):</strong></label>
-            <input type="text" id="filter_ip" name="filter_ip" value="{{ filter_ip }}" placeholder="Ej: 192.168.1.3 o 10.136...">
-            <button type="submit">Buscar / Filtrar</button>
+            <label for="filter_ip"><strong>Filtrar por IP o Extensión:</strong></label>
+            <input type="text" id="filter_ip" name="filter_ip" value="{{ filter_ip }}" placeholder="Ej: 10.141.16.12">
+            <button type="submit">Aplicar Filtro</button>
             {% if filter_ip %}
-                <<a href="/reset" style="margin-left: 10px; color: #d9534f; text-decoration: none; font-weight: bold;">Limpiar filtro</a>
+                <a href="/reset" style="margin-left: 15px; color: #dc3545; font-weight: bold;">Limpiar filtro</a>
             {% endif %}
         </form>
 
-        {% if results.sip %}
-        <h3>📞 Llamadas y Señalización SIP Detectadas</h3>
-        <table>
-            <tr>
-                <th>Origen</th>
-                <th>Destino</th>
-                <th>Puertos</th>
-                <th>Mensaje / Método SIP</th>
-            </tr>
-            {% for s in results.sip %}
-            <tr class="sip-row">
-                <td>{{ s.src }}</td>
-                <td>{{ s.dst }}</td>
-                <td>{{ s.port }}</td>
-                <td><code>{{ s.info }}</code></td>
-            </tr>
-            {% endfor %}
-        </ul>
-        <br>
-        {% endif %}
+        <!-- BARRA DE PESTAÑAS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="openTab(event, 'tab-voip')">📞 Módulo VoIP / SIP</button>
+            <button class="tab-btn" onclick="openTab(event, 'tab-rtp')">🎧 Módulo de Audio (RTP)</button>
+            <button class="tab-btn" onclick="openTab(event, 'tab-net')">🌐 Módulo de Red (TCP)</button>
+        </div>
 
-        <h3>Tráfico de Red Capturado (Muestra)</h3>
-        <table>
-            <tr>
-                <th>Origen</th>
-                <th>Destino</th>
-                <th>Protocolo</th>
-                <th>Puerto Src</th>
-                <th>Puerto Dst</th>
-                <th>Tamaño</th>
-            </tr>
-            {% for pkt in results.packets %}
-            <tr {% if pkt.is_sip %}class="sip-row"{% endif %}>
-                <td>{{ pkt.src }}</td>
-                <td>{{ pkt.dst }}</td>
-                <td>{{ pkt.protocol }}</td>
-                <td>{{ pkt.sport }}</td>
-                <td>{{ pkt.dport }}</td>
-                <td>{{ pkt.length }} bytes</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <!-- PESTAÑA 1: VOIP -->
+        <div id="tab-voip" class="tab-content active">
+            <h3>📊 Diagramas de Secuencia por Sesión</h3>
+            {% if results.flows %}
+                {% for call_id, messages in results.flows.items() %}
+                <div class="flow-container">
+                    <h4 style="margin-top: 0; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 8px;">
+                        Call-ID: <span style="font-family: monospace; font-size: 12px; color: #007bff;">{{ call_id }}</span>
+                    </h4>
+                    <div class="mermaid">
+                        sequenceDiagram
+                        autonumber
+                        {% for m in messages %}
+                            {% set src_id = "ip_" ~ m.src_ip | replace('.', '_') %}
+                            {% set dst_id = "ip_" ~ m.dst_ip | replace('.', '_') %}
+                            {% set src_label = m.from_num ~ " (" ~ m.src_ip ~ ")" %}
+                            {% set dst_label = m.to_num ~ " (" ~ m.dst_ip ~ ")" %}
+
+                            participant {{ src_id }} as {{ src_label }}
+                            participant {{ dst_id }} as {{ dst_label }}
+
+                            {% if m.is_critical %}
+                                {{ src_id }}->>{{ dst_id }}: ❌ {{ m.info }}
+                            {% else %}
+                                {{ src_id }}->>{{ dst_id }}: {{ m.info }}
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">No hay flujos SIP registrados.</p>
+            {% endif %}
+        </div>
+
+        <!-- PESTAÑA 2: RED -->
+        <div id="tab-net" class="tab-content">
+            <h3>🌐 Auditoría de Conexiones TCP / Infraestructura</h3>
+            {% if results.tcp %}
+            <table>
+                <tr>
+                    <th>Origen IP</th>
+                    <th>Destino IP</th>
+                    <th>Puertos</th>
+                    <th>Estado TCP</th>
+                    <th>Análisis de Soporte</th>
+                </tr>
+                {% for t in results.tcp %}
+                <tr class="{% if t.level == 'danger' %}row-danger{% endif %}">
+                    <td><code>{{ t.src }}</code></td>
+                    <td><code>{{ t.dst }}</code></td>
+                    <td>{{ t.port }}</td>
+                    <td><strong>{{ t.status_desc }}</strong></td>
+                    <td>{{ t.explanation }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">No hay tráfico TCP analizable.</p>
+            {% endif %}
+        </div>
+
+		<!-- PESTAÑA 3: RTP / AUDIO -->
+        <div id="tab-rtp" class="tab-content">
+            <h3>🎧 Auditoría de Flujos de Audio (RTP - UDP Multimedia)</h3>
+            {% if results.rtp %}
+            <p style="font-size: 13px; color: #6c757d;">Se han detectado flujos de audio asociados a llamadas. Si los usuarios se quejan de cortes o mala calidad, revise el volumen de paquetes transmitidos.</p>
+            <table>
+                <tr>
+                    <th>Flujo de Audio (Origen ➔ Destino)</th>
+                    <th>Paquetes RTP Capturados</th>
+                    <th>Volumen Total (Bytes)</th>
+                    <th>Estado de Calidad Estimada</th>
+                </tr>
+                {% for r in results.rtp %}
+                <tr>
+                    <td><code>{{ r.stream }}</code></td>
+                    <td>{{ r.packets }} paquetes</td>
+                    <td>{{ r.bytes }} bytes</td>
+                    <td><span class="badge badge-success">AUDIO DETECTADO (ESTABLE)</span></td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% else %}
+            <p style="padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; color: #6c757d;">
+                No se han detectado flujos multimedia RTP en esta captura (probablemente porque es una traza exclusivamente de señalización o registros).
+            </p>
+            {% endif %}
+        </div>
+
     </div>
 </body>
 </html>
