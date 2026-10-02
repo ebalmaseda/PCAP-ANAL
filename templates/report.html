@@ -11,7 +11,7 @@
         .topbar a { color: #94a3b8; text-decoration: none; font-size: 14px; }
         .topbar a:hover { color: white; }
         
-        .main-container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .main-container { max-width: 1250px; margin: 30px auto; padding: 0 20px; }
         
         .verdict-banner { padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; border-left: 6px solid; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .verdict-success { border-color: #10b981; color: #065f46; }
@@ -36,8 +36,14 @@
         .tab-panel { display: none; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .tab-panel.active { display: block; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .stream-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .stream-header { background: #f1f5f9; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #e2e8f0; font-size: 13px; font-weight: bold; color: #334155; }
+        .stream-header:hover { background: #e2e8f0; }
+        .stream-body { padding: 15px; display: none; background: white; }
+        .stream-body.open { display: block; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
         th { background: #f8fafc; color: #475569; font-weight: 600; }
         
         .highlight-row { animation: flash 2s ease; }
@@ -48,10 +54,15 @@
         }
 
         .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-box { background: white; padding: 25px; width: 650px; border-radius: 8px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .modal-box { background: white; padding: 25px; width: 750px; border-radius: 8px; max-height: 85vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .modal-close { float: right; font-size: 20px; font-weight: bold; cursor: pointer; color: #94a3b8; }
         .modal-close:hover { color: #333; }
-        pre { background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 12px; white-space: pre-wrap; font-family: monospace; }
+        pre { background: #0f172a; color: #38bdf8; padding: 15px; border-radius: 6px; border: 1px solid #334155; font-size: 12px; white-space: pre-wrap; font-family: monospace; }
+        
+        .badge-flag { background: #e2e8f0; color: #1e293b; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-family: monospace; font-size: 11px; }
+        .badge-syn { background: #dbeafe; color: #1d4ed8; }
+        .badge-rst { background: #fee2e2; color: #991b1b; }
+        .badge-fin { background: #d1fae5; color: #065f46; }
     </style>
     <script>
         function switchTab(evt, tabId) {
@@ -66,6 +77,11 @@
             body.classList.toggle('open');
         }
 
+        function toggleStream(streamId) {
+            var body = document.getElementById('stream-body-' + streamId);
+            body.classList.toggle('open');
+        }
+
         function jumpToPacket(pktIndex, isTcp) {
             if (isTcp) {
                 document.querySelectorAll('.tab-trigger')[1].click();
@@ -74,10 +90,15 @@
             }
 
             setTimeout(function() {
-                var rowId = isTcp ? 'tcp-row-' + pktIndex : 'sip-row-' + pktIndex;
+                var rowId = 'tcp-row-' + pktIndex;
                 var row = document.getElementById(rowId);
                 
                 if (row) {
+                    var streamBody = row.closest('.stream-body');
+                    if (streamBody && !streamBody.classList.contains('open')) {
+                        streamBody.classList.add('open');
+                    }
+
                     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     row.classList.add('highlight-row');
                     setTimeout(() => row.classList.remove('highlight-row'), 2500);
@@ -87,10 +108,17 @@
             }, 60);
         }
 
-        // USO DE JSON SEGURO PARA EVITAR ERRORES DE SINTAXIS CON SALTOS DE LÍNEA Y COMILLAS
-        function showPayload(payload, index, type) {
-            document.getElementById('modal-title').innerText = "Inspección del Paquete " + type + " #" + index;
-            document.getElementById('modal-text').innerText = payload || "Este paquete no contiene carga útil de texto.";
+        function showPayload(buttonElement, index, type) {
+            var b64Payload = buttonElement.getAttribute('data-payload');
+            var decodedPayload = "Sin contenido";
+            try {
+                decodedPayload = decodeURIComponent(escape(window.atob(b64Payload)));
+            } catch (e) {
+                decodedPayload = b64Payload;
+            }
+
+            document.getElementById('modal-title').innerText = "Ficha Técnica del Paquete " + type + " #" + index;
+            document.getElementById('modal-text').innerText = decodedPayload || "Este paquete no contiene carga útil.";
             document.getElementById('payloadModal').style.display = 'flex';
         }
 
@@ -135,7 +163,7 @@
                         {% endif %}
                         <div style="color: #64748b; font-size: 12px; margin-top: 3px;">{{ err.desc }}</div>
                     </div>
-                    <button onclick="jumpToPacket({{ err.first_pkt }}, {{ 'true' if err.type == 'Seguridad / Firewall' else 'false' }})">Ir al paquete #{{ err.first_pkt }} &rarr;</button>
+                    <button onclick="jumpToPacket({{ err.first_pkt }}, true)">Ir al paquete #{{ err.first_pkt }} &rarr;</button>
                 </div>
                 {% endfor %}
             </div>
@@ -161,7 +189,7 @@
         <!-- 4. PESTAÑAS ESPECIALIZADAS -->
         <div class="nav-tabs" style="margin-top: 25px;">
             <button class="tab-trigger active" onclick="switchTab(event, 'panel-sip')">📞 Llamadas y Señalización (SIP)</button>
-            <button class="tab-trigger" onclick="switchTab(event, 'panel-net')">🌐 Capa de Red y Firewall (TCP)</button>
+            <button class="tab-trigger" onclick="switchTab(event, 'panel-net')">🌐 Conversaciones TCP (Streams)</button>
         </div>
 
         <!-- PESTAÑA SIP -->
@@ -203,52 +231,69 @@
                     <td><code>{{ s.src_ip }}</code></td>
                     <td><code>{{ s.dst_ip }}</code></td>
                     <td><code>{{ s.info }}</code></td>
-                    <!-- USO DE | tojson PARA EVITAR ROMPER JAVASCRIPT CON SALTOS DE LÍNEA -->
-                    <td><button onclick="showPayload({{ s.full_payload | tojson }}, {{ s.pkt_index }}, 'SIP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver detalles</button></td>
+                    <td><button data-payload="{{ s.full_payload }}" onclick="showPayload(this, {{ s.pkt_index }}, 'SIP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver detalles</button></td>
                 </tr>
                 {% endfor %}
             </table>
         </div>
 
-        <!-- PESTAÑA RED -->
+        <!-- PESTAÑA RED / CONVERSACIONES TCP -->
         <div id="panel-net" class="tab-panel">
-            <h3 style="margin-top: 0; font-size: 16px; color: #1e293b;">Auditoría de Capa de Red (TCP)</h3>
-            {% if results.tcp %}
-            <table>
-                <tr>
-                    <th>Nº Pkt</th>
-                    <th>Origen</th>
-                    <th>Destino</th>
-                    <th>Puertos</th>
-                    <th>Estado</th>
-                    <th>Diagnóstico</th>
-                    <th>Inspección</th>
-                </tr>
-                {% for t in results.tcp %}
-                <tr id="tcp-row-{{ t.pkt_index }}">
-                    <td><strong>#{{ t.pkt_index }}</strong></td>
-                    <td><code>{{ t.src }}</code></td>
-                    <td><code>{{ t.dst }}</code></td>
-                    <td>{{ t.port }}</td>
-                    <td><strong>{{ t.status_desc }}</strong></td>
-                    <td>{{ t.explanation }}</td>
-                    <!-- USO DE | tojson PARA ESCAPE SEGURO -->
-                    <td><button onclick="showPayload({{ t.full_payload | tojson }}, {{ t.pkt_index }}, 'TCP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">Ver detalles</button></td>
-                </tr>
+            <h3 style="margin-top: 0; font-size: 16px; color: #1e293b;">Conversaciones TCP con Diagnóstico IA</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Cada stream es evaluado heurísticamente para detectar caídas de servicios, bloqueos de firewall o handshakes problemáticos.</p>
+
+            {% if results.tcp_streams %}
+                {% for stream_id, stream_data in results.tcp_streams.items() %}
+                {% set loop_index = loop.index %}
+                <div class="stream-card">
+                    <div class="stream-header" onclick="toggleStream('{{ loop_index }}')">
+                        <div>
+                            <span>🌐 Stream: <code>{{ stream_data.stream_id }}</code></span>
+                            <span style="background: #e2e8f0; color: #334155; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 10px;">{{ stream_data.packets | length }} paquetes</span>
+                            <span style="margin-left: 10px; font-size: 12px; font-weight: normal; color: {% if stream_data.health_level == 'danger' %}#991b1b{% elif stream_data.health_level == 'warning' %}#b45309{% else %}#065f46{% endif %};"><strong>Diagnóstico IA:</strong> {{ stream_data.diagnosis }}</span>
+                        </div>
+                        <span style="color: #2563eb; font-size: 12px;">📁 Desplegar ▼</span>
+                    </div>
+                    <div id="stream-body-{{ loop_index }}" class="stream-body">
+                        <table>
+                            <tr>
+                                <th>Nº Pkt</th>
+                                <th>Origen</th>
+                                <th>Destino</th>
+                                <th>Puertos</th>
+                                <th>Flags TCP</th>
+                                <th>Seq / Ack</th>
+                                <th>Detalles</th>
+                                <th>Ficha Wireshark</th>
+                            </tr>
+                            {% for t in stream_data.packets %}
+                            <tr id="tcp-row-{{ t.pkt_index }}">
+                                <td><strong>#{{ t.pkt_index }}</strong></td>
+                                <td><code>{{ t.src }}</code></td>
+                                <td><code>{{ t.dst }}</code></td>
+                                <td>{{ t.port }}</td>
+                                <td><span class="badge-flag {% if 'SYN' in t.flags %}badge-syn{% elif 'RST' in t.flags %}badge-rst{% elif 'FIN' in t.flags %}badge-fin{% endif %}">{{ t.flags }}</span></td>
+                                <td><code style="font-size: 11px; color: #475569;">{{ t.seq_ack }}</code></td>
+                                <td><span style="font-size: 11px; color: #64748b;">{{ t.explanation }}</span></td>
+                                <td><button data-payload="{{ t.full_payload }}" onclick="showPayload(this, {{ t.pkt_index }}, 'TCP')" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">Ver Wireshark</button></td>
+                            </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </div>
                 {% endfor %}
-            </table>
             {% else %}
-            <p style="color: #64748b; font-size: 13px;">No hay tráfico TCP disponible.</p>
+            <p style="color: #64748b; font-size: 13px;">No hay conversaciones TCP disponibles.</p>
             {% endif %}
         </div>
 
     </div>
 
-    <!-- MODAL DE INSPECCIÓN -->
+    <!-- MODAL DE INSPECCIÓN ESTILO WIRESHARK -->
     <div id="payloadModal" class="modal-bg">
         <div class="modal-box">
             <span class="modal-close" onclick="hideModal()">&times;</span>
-            <h3 id="modal-title" style="margin-top: 0; font-size: 16px;">Detalle del Paquete</h3>
+            <h3 id="modal-title" style="margin-top: 0; font-size: 16px; color: #1e293b;">Ficha Técnica del Paquete</h3>
             <pre id="modal-text">Cargando...</pre>
         </div>
     </div>
